@@ -3,7 +3,7 @@ import pandas as pd
 
 
 # # ================= CONFIG =================
-API_KEY = "OpenweatherApiKey"  # Do not hardcode in production
+API_KEY = "6589ed49a6410165ea63662b113ed824"  # Do not hardcode in production
 
 HISTORICAL_DATA_URL = "http://api.openweathermap.org/data/2.5/air_pollution/history"
 

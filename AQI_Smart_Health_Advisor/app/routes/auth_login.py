@@ -2,19 +2,11 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_mail import Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-import mysql.connector
+import psycopg2
 import random
+from app.db import get_db_connection
 
 login_auth = Blueprint('login_auth', __name__)
-
-# Database connection function
-def get_db_connection():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='My@MySql8044',
-        database='Aqi_app_db'
-    )
 
 @login_auth.route('/login_signup', methods=['GET'])
 def login_signup_page():
@@ -111,7 +103,7 @@ def verify():
         
         # Mark as verified
         cursor.execute(
-            "UPDATE login_data SET is_verified = 1, otp = NULL WHERE email = %s",
+            "UPDATE login_data SET is_verified = TRUE, otp = NULL WHERE email = %s",
             (email,)
         )
         mycon.commit()
@@ -303,7 +295,7 @@ def signup():
         # Insert user
         cursor.execute(
             """INSERT INTO login_data (username, email, age, gender, city, password, otp, otp_created_at, is_verified) 
-               VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), 0)""",
+               VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), FALSE)""",
             (username, email, age, gender, city, hashed_password, otp)
         )
         mycon.commit()

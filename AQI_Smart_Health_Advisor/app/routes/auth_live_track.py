@@ -7,7 +7,7 @@ import json
 live_track_auth = Blueprint('live_track_auth', '__name__')
 
 # Gemini API Configuration
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'GeminiAPIKey')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyC8R96XiTZ1U90D5N-YztBh9VpZQbuWoNE')
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
 # Initialize Gemini client
@@ -344,14 +344,12 @@ def get_fallback_recommendations(aqi, aqi_category, dominant_pollutant):
 
 
 def store_alert_in_db(user_email, alert, recommendations):
-    """Store alert in MySQL database"""
+    """Store alert in PostgreSQL database"""
     try:
-        conn = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="My@MySql8044",
-                database="Aqi_app_db"
-        )
+        from app.db import get_db_connection
+        conn = get_db_connection()
+        if not conn:
+            return
         cursor = conn.cursor()
         
         # Store with expiry time (30 minutes after creation)
@@ -400,12 +398,10 @@ def store_alert_in_db(user_email, alert, recommendations):
 def get_alerts_from_db(user_email):
     """Retrieve active alerts from database and clean up expired ones"""
     try:
-        conn = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="My@MySql8044",
-                database="Aqi_app_db"
-)
+        from app.db import get_db_connection
+        conn = get_db_connection()
+        if not conn:
+            return []
         cursor = conn.cursor()
         
         # First, delete expired alerts
@@ -459,12 +455,10 @@ def get_alerts_from_db(user_email):
 def clear_alerts_from_db(user_email):
     """Clear all alerts for user from database"""
     try:
-        conn = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="My@MySql8044",
-                database="Aqi_app_db"
-)
+        from app.db import get_db_connection
+        conn = get_db_connection()
+        if not conn:
+            return
         cursor = conn.cursor()
         
         query = "DELETE FROM tracking_alerts WHERE user_email = %s"

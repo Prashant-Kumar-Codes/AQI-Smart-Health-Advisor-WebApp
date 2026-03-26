@@ -404,13 +404,20 @@
     <!-- CheckAqi - Leaflet Maps -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <script>
-    // Toggle expandable cards (FIXED)
-    function toggleExpandCard(event) {
-        const card = event.target.closest('.expandable-card-pro');
-        if (!card) return;
-        card.classList.toggle('expanded');
+<script>
+function toggleCard(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+
+    card.classList.toggle('expanded');
+
+    // Optional: rotate arrow icon
+    const header = card.previousElementSibling;
+    const icon = header.querySelector('.expand-icon-pro');
+    if (icon) {
+        icon.classList.toggle('rotated');
     }
+}
 </script>
 
     <script>

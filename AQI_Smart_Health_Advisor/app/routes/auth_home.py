@@ -1,14 +1,7 @@
 from .extensions import *
+from app.db import get_db_connection
 
 home_auth = Blueprint('home_auth', __name__)
-
-# Database connection
-mycon_obj = mysql.connector.connect(
-    host='localhost',
-    user='root',
-    password='My@MySql8044',
-    database='Aqi_app_db'
-)
 
 def get_active_user_count():
     """
@@ -16,12 +9,16 @@ def get_active_user_count():
     Returns: Integer count of users
     """
     try:
-        cursor_home_auth = mycon_obj.cursor()
+        conn = get_db_connection()
+        if not conn:
+            return 0
+        cursor_home_auth = conn.cursor()
         # Fixed SQL query - removed space in table name
         query = 'SELECT COUNT(id) FROM login_data;'
         cursor_home_auth.execute(query)
         result = cursor_home_auth.fetchone()
         cursor_home_auth.close()
+        conn.close()
         
         # Extract count from result tuple
         user_count = result[0] if result else 0

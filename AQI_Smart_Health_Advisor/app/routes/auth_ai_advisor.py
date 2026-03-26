@@ -2,12 +2,13 @@ from .extensions import *
 import json
 import requests
 from .locationService import location_service
-import mysql.connector
+import psycopg2
+from app.db import get_db_connection
 
 ai_advisor_auth = Blueprint('ai_advisor_auth', __name__)
 
 # Gemini API Configuration
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'GeminiAPIKey')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyC8R96XiTZ1U90D5N-YztBh9VpZQbuWoNE')
 #GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
@@ -464,12 +465,9 @@ def check_user_logged_in():
         
         try:
             # Fetch user data from database
-            conn = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="My@MySql8044",
-            database="aqi_app_db"
-        )
+            conn = get_db_connection()
+            if not conn:
+                return jsonify({'logged_in': False, 'error': 'Database connection failed'}), 500
             cursor = conn.cursor()
             print('cursor is created successfully')
             cursor.execute("SELECT username, email, age, gender, city FROM login_data WHERE id = %s", (user_id,))
@@ -514,10 +512,12 @@ def get_user_city():
         
         # Try to fetch from database
         try:
-            cursor = mysql.connector.cursor()
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute("SELECT city FROM login_data WHERE id = %s", (session.get('user_id'),))
             result = cursor.fetchone()
             cursor.close()
+            conn.close()
             
             if result and result[0]:
                 return jsonify({'city': result[0]}), 200

@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: aqi-smart-health-advisor
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn -b 0.0.0.0:$PORT run:app"
+    runtime: python-3.12.1

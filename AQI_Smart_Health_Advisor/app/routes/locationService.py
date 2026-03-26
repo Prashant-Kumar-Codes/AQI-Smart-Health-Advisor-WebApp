@@ -12,7 +12,7 @@ import os
 from flask import Blueprint, request, jsonify
 
 # AQI API Configuration
-WAQI_API_TOKEN = os.getenv('WAQI_API_TOKEN', 'Waqi_API_KEY')
+WAQI_API_TOKEN = os.getenv('WAQI_API_TOKEN', '46797eab2434e3cb85537e21e9a80bcb309220e3')
 WAQI_BASE_URL = 'https://api.waqi.info'
 
 

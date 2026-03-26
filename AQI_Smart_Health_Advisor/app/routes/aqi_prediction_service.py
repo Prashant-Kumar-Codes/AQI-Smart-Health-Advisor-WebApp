@@ -6,8 +6,9 @@ Returns 24-hour data: 12 hours historical + 12 hours predicted.
 """
 
 import requests
-import mysql.connector
-from mysql.connector import Error
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from app.db import get_db_connection
 from datetime import datetime, timedelta
 import time
 import logging
@@ -25,20 +26,20 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 # OpenWeather API Configuration
-API_KEY = "YOUR_OPEN_WEATHER_API"
+API_KEY = os.getenv("OPENWEATHER_API_KEY", "6589ed49a6410165ea63662b113ed824")
 API_HISTORICAL_URL = "http://api.openweathermap.org/data/2.5/air_pollution/history"
 
 # Database Configuration
 DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'aqi_app_db',
-    'user': 'root',  # Update with your MySQL user
-    'password': 'My@MySql8044',  # Update with your MySQL password
-    'port': 3306
+    'host': os.getenv("POSTGRES_HOST", 'localhost'),
+    'database': os.getenv("POSTGRES_DB", 'aqi_app_db'),
+    'user': os.getenv("POSTGRES_USER", 'postgres'),
+    'password': os.getenv("POSTGRES_PASSWORD", 'your_password_here'),
+    'port': int(os.getenv("POSTGRES_PORT", 5432))
 }
 
 # Model Configuration - All 12 models
-MODELS_DIR = r'D:\Codes\Projects\AQI_SMART_HEALTH_ADVISOR_WEB_APP\app\models'
+MODELS_DIR = os.getenv('MODELS_DIR', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models'))
 FEATURE_NAMES_PATH = os.path.join(MODELS_DIR, 'feature_names.txt')
 
 # ============================================================================
@@ -176,14 +177,10 @@ def get_aqi_category(aqi: float) -> str:
 # DATABASE FUNCTIONS
 # ============================================================================
 
-def get_db_connection():
-    """Get database connection"""
-    try:
-        connection = mysql.connector.connect(**DB_CONFIG)
-        return connection
-    except Error as e:
-        logger.error(f"Database connection error: {e}")
-        return None
+def get_db_connection_old():
+    """Get database connection (legacy)"""
+    from app.db import get_db_connection as connect
+    return connect()
 
 
 def get_24h_data_from_db(latitude: float, longitude: float, from_time: datetime) -> pd.DataFrame:
@@ -193,7 +190,8 @@ def get_24h_data_from_db(latitude: float, longitude: float, from_time: datetime)
         if not connection:
             return pd.DataFrame()
             
-        cursor = connection.cursor(dictionary=True)
+        from app.db import get_db_cursor
+        cursor = get_db_cursor(connection, dict_cursor=True)
         
         query = """
             SELECT 
@@ -204,7 +202,7 @@ def get_24h_data_from_db(latitude: float, longitude: float, from_time: datetime)
             WHERE latitude = %s 
               AND longitude = %s
               AND hour_timestamp >= %s
-              AND hour_timestamp < DATE_ADD(%s, INTERVAL 24 HOUR)
+              AND hour_timestamp < %s + INTERVAL '24 hours'
             ORDER BY hour_timestamp ASC
         """
         
@@ -219,7 +217,7 @@ def get_24h_data_from_db(latitude: float, longitude: float, from_time: datetime)
             return df
         return pd.DataFrame()
         
-    except Error as e:
+    except Exception as e:
         logger.error(f"Error fetching data from database: {e}")
         return pd.DataFrame()
 
@@ -247,10 +245,10 @@ def store_hourly_data(connection, latitude: float, longitude: float, hourly_reco
                 %(sub_index_so2)s, %(sub_index_co)s, %(sub_index_o3)s,
                 'api'
             )
-            ON DUPLICATE KEY UPDATE
-                pm2_5 = VALUES(pm2_5),
-                pm10 = VALUES(pm10),
-                indian_aqi = VALUES(indian_aqi)
+            ON CONFLICT (latitude, longitude, hour_timestamp) DO UPDATE SET
+                pm2_5 = EXCLUDED.pm2_5,
+                pm10 = EXCLUDED.pm10,
+                indian_aqi = EXCLUDED.indian_aqi
         """
         
         cursor.executemany(insert_query, hourly_records)
@@ -260,7 +258,7 @@ def store_hourly_data(connection, latitude: float, longitude: float, hourly_reco
         logger.info(f"✓ Stored {len(hourly_records)} hourly records")
         return True
         
-    except Error as e:
+    except Exception as e:
         logger.error(f"Error storing data: {e}")
         connection.rollback()
         return False

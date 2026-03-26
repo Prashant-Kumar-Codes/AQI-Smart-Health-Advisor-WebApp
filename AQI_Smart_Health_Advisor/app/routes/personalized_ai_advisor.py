@@ -1,17 +1,11 @@
-"""
-Personalized AI Health Advisor Service using Google Gemini
-Uses:
-- login_data table (id, username, email, age, gender, city)
-- user_health_profile table (optional - uses only available fields)
-"""
-
 import os
 import requests
 from flask import session
 from datetime import datetime
+from app.db import get_db_cursor
 
 # Gemini API Configuration
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'GeminiAPIKey')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyC8R96XiTZ1U90D5N-YztBh9VpZQbuWoNE')
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
 
@@ -27,12 +21,12 @@ def get_user_profile_from_login_data(user_id, db):
         dict: User profile data or None
     """
     try:
-        cursor = db.cursor(dictionary=True)
+        cursor = get_db_cursor(db, dict_cursor=True)
         
         query = """
         SELECT username, email, age, gender, city
         FROM login_data
-        WHERE id = %s AND is_verified = 1
+        WHERE id = %s AND is_verified = TRUE
         """
         
         cursor.execute(query, (user_id,))
@@ -62,7 +56,7 @@ def get_user_health_profile(email, db):
         dict: Health profile data (only non-NULL fields) or None
     """
     try:
-        cursor = db.cursor(dictionary=True)
+        cursor = get_db_cursor(db, dict_cursor=True)
         
         query = """
         SELECT 
@@ -589,7 +583,7 @@ def handle_personalized_recommendation_request(request_data, db_connection):
     
     Args:
         request_data: Request JSON data
-        db_connection: MySQL database connection
+        db_connection: PostgreSQL database connection
         
     Returns:
         tuple: (response_dict, status_code)

@@ -168,7 +168,7 @@ a:hover {
 }
 
 /* ========== RESPONSIVE NAVBAR ========== */
-@media (max-width: 800px) {
+@media (max-width: 900px) {
     .nav-container {
         padding: 0 20px;
     }

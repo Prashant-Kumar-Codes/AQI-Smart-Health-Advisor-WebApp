@@ -10,11 +10,11 @@ checkAqi_auth = Blueprint('checkAqi_auth', __name__)
 
 # AQI API Configuration
 WAQI_BASE_URL = 'https://api.waqi.info'
-WAQI_API_TOKEN = os.getenv('WAQI_API_TOKEN', 'Your_WAQI_API_TOKEN')
+WAQI_API_TOKEN = os.getenv('WAQI_API_TOKEN', '46797eab2434e3cb85537e21e9a80bcb309220e3')
 
 # OpenWeather API Configuration
 OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5'
-OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', 'Your_OpenWeather_API')
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', '6589ed49a6410165ea63662b113ed824')
 
 # Load ML models at startup
 try:
