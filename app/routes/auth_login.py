@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import psycopg2
 import random
 from app.db import get_db_connection
+from app.__init__ import mail
+
 
 login_auth = Blueprint('login_auth', __name__)
 
@@ -38,6 +40,10 @@ def verify_page():
     email = session['verification_email']
     
     mycon = get_db_connection()
+    if not mycon:
+        flash('Database connection failed. Please try again later.', 'error')
+        return redirect(url_for('home_auth.aqi_homepage'))
+        
     cursor = mycon.cursor()
     cursor.execute("SELECT otp_created_at FROM aqi_login_data WHERE email = %s", (email,))
     result = cursor.fetchone()
@@ -47,7 +53,8 @@ def verify_page():
     remaining = 600  # Default 10 minutes
     if result and result[0]:
         otp_created_at = result[0]
-        elapsed = (datetime.now() - otp_created_at).total_seconds()
+        # Use utcnow() to match DB (UTC)
+        elapsed = (datetime.utcnow() - otp_created_at).total_seconds()
         remaining = max(0, 600 - int(elapsed))  # 600 seconds = 10 minutes
     
     return render_template('auth/verify.html', remaining=remaining)
@@ -72,6 +79,10 @@ def verify():
             return redirect(url_for('login_auth.verify_page'))
         
         mycon = get_db_connection()
+        if not mycon:
+            flash('Database connection failed. Please try again later.', 'error')
+            return redirect(url_for('login_auth.verify_page'))
+            
         cursor = mycon.cursor()
         cursor.execute(
             "SELECT otp, otp_created_at FROM aqi_login_data WHERE email = %s",
@@ -88,7 +99,8 @@ def verify():
         stored_otp, otp_created_at = result
         
         # Check if OTP is expired (10 minutes)
-        if datetime.now() - otp_created_at > timedelta(minutes=10):
+        # Use utcnow() to match DB (UTC)
+        if datetime.utcnow() - otp_created_at > timedelta(minutes=10):
             cursor.close()
             mycon.close()
             flash('OTP has expired. Please request a new code.', 'error')
@@ -140,6 +152,10 @@ def resend_otp():
         otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
         
         mycon = get_db_connection()
+        if not mycon:
+            flash('Database connection failed. Please try again later.', 'error')
+            return redirect(url_for('login_auth.verify_page'))
+            
         cursor = mycon.cursor()
         cursor.execute(
             "UPDATE aqi_login_data SET otp = %s, otp_created_at = NOW() WHERE email = %s",
@@ -186,6 +202,9 @@ def login():
             return jsonify({'success': False, 'message': 'Email and password required'}), 400
         
         mycon = get_db_connection()
+        if not mycon:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 503
+            
         cursor = mycon.cursor()
         cursor.execute("SELECT id, username, email, age, gender, city, password, is_verified FROM aqi_login_data WHERE email = %s", (email,))
         user = cursor.fetchone()
@@ -221,7 +240,7 @@ def login():
         print(f'Session Data : {user_id}, {username}, {user_email}, {age}, {gender}, {city}')
         
         # FIXED: Better redirect handling
-        redirect_url = '/aqi_homepage'  # Default
+        redirect_url = '/'  # Default
         
         if redirect_to:
             # Direct page names
@@ -232,7 +251,7 @@ def login():
             elif redirect_to == 'check_aqi':
                 redirect_url = '/check_aqi'
             elif redirect_to == 'home':
-                redirect_url = '/aqi_homepage'
+                redirect_url = '/'
             # If it's already a full path (starts with /)
             elif redirect_to.startswith('/'):
                 redirect_url = redirect_to
@@ -283,6 +302,9 @@ def signup():
         otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
         
         mycon = get_db_connection()
+        if not mycon:
+            return jsonify({'success': False, 'message': 'Database connection failed'}), 503
+            
         cursor = mycon.cursor()
         
         # Check if email already exists

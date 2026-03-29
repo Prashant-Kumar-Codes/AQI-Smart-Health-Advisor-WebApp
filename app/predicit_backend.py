@@ -1,20 +1,3 @@
-"""
-AQI Prediction Service - On-Demand Backend
-===========================================
-Fetches data only when needed, caches intelligently, serves predictions.
-
-Architecture:
-1. User searches location
-2. Check database for last 24h data
-3. Fill gaps by fetching from API
-4. Calculate features
-5. Predict hourly for next 12h
-6. Return: {last_12h_actual, next_12h_predicted}
-7. Cache results for concurrent users
-
-Author: AQI Prediction System
-"""
-
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -28,27 +11,18 @@ import pandas as pd
 import joblib
 from typing import Dict, List, Optional, Tuple
 from functools import lru_cache
-
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
+import os
 
 API_KEY = "your_api_key_here"
 API_HISTORICAL_URL = "http://api.openweathermap.org/data/2.5/air_pollution/history"
 
-DB_CONFIG = {
-    'host': os.getenv("POSTGRES_HOST", 'localhost'),
-    'database': os.getenv("POSTGRES_DB", 'aqi_app_db'),
-    'user': os.getenv("POSTGRES_USER", 'postgres'),
-    'password': os.getenv("POSTGRES_PASSWORD", 'your_password_here'),
-    'port': int(os.getenv("POSTGRES_PORT", 5432))
-}
+# Base directory for the application
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # Model configuration
-#MODEL_PATH = 'models/aqi_rf_model.pkl'
-# MODEL_PATH = 'app/models/aqi_rf_model.pkl'
-MODEL_PATH = r'D:\Codes\Projects\AQI_SMART_HEALTH_ADVISOR_WEB_APP\app\models\aqi_rf_model_1h.pkl'
-FEATURE_NAMES_PATH = 'models/feature_names.txt'
+MODELS_DIR = os.path.join(APP_ROOT, 'models')
+MODEL_PATH = os.path.join(MODELS_DIR, 'aqi_rf_model_1h.pkl')
+FEATURE_NAMES_PATH = os.path.join(MODELS_DIR, 'feature_names.txt')
 
 
 # Cache configuration

@@ -35,7 +35,7 @@ def format_user_count(count):
         return f"{count / 1000:.1f}K+"
     return str(count)
 
-@home_auth.route('/aqi_homepage', methods=['GET'])
+@home_auth.route('/', methods=['GET'])
 def aqi_homepage():
     # Get the actual count
     user_count = get_active_user_count()
